@@ -19,14 +19,19 @@ Responsive Design: Optimized for mobile phones, tablets, and desktop screens.
 Zero Dependencies: Pure vanilla implementation without heavy external libraries.
 
 ## 🛠️  Components & Tech Stack
-HTML5: Structures the layout, quiz card container, and question/option elements.
+1.HTML5: Structures the layout, quiz card container, and question/option elements.
 
-CSS3: Custom styles, colors, button hover states, and responsive flexbox design.
+2.CSS3: Custom styles, colors, button hover states, and responsive flexbox design.
 
-JavaScript (ES6):
+3.JavaScript (ES6):
 
 Dynamic question rendering from array data.
 
 DOM manipulation for interactive UI state changes.
 
 Score tracking and final result screen logic.
+
+#### 👨‍💻 Author
+# Maskoor Ahsan
+
+###### GitHub: @maskoorahsan172-jpg
