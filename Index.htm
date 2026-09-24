@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz Mini-Project</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 650px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        h1, h2 {
+            margin-bottom: 15px;
+            color: var(--text);
+        }
+
+        p {
+            color: var(--text-light);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 15px;
+        }
+
+        .timer {
+            background: #fee2e2;
+            color: var(--danger);
+            padding: 6px 12px;
+            font-weight: bold;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .question-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #e5e7eb;
+            padding: 14px 18px;
+            text-align: left;
+            font-size: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #eef2ff;
+        }
+
+        .option-btn.correct {
+            background-color: #d1fae5;
+            border-color: var(--success);
+            color: #065f46;
+            font-weight: 600;
+        }
+
+        .option-btn.wrong {
+            background-color: #fee2e2;
+            border-color: var(--danger);
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+        .quiz-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .score-card {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 1. Start Screen -->
+        <div id="start-screen" class="screen active text-center">
+            <h1>🚀 Ultimate Web Dev Quiz Challenge</h1>
+            <p>Test your skills across 20 web development questions! You have 15 seconds per question. Navigate back and forth freely before time runs out.</p>
+            <button class="btn" id="start-btn">Start Quiz</button>
+        </div>
+
+        <!-- 2. Quiz Screen -->
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <span class="progress-text" id="progress-text">Question 1 of 20</span>
+                <span class="timer" id="timer">Time: 15s</span>
+            </div>
+            
+            <div id="question-container">
+                <h3 class="question-title" id="question-title">Loading question...</h3>
+                <div class="options-list" id="options-list">
+                    <!-- Options injected dynamically -->
+                </div>
+            </div>
+
+            <div class="quiz-footer">
+                <button class="btn btn-secondary" id="prev-btn">Previous</button>
+                <button class="btn" id="next-btn">Next</button>
+            </div>
+        </div>
+
+        <!-- 3. Result Screen -->
+        <div id="result-screen" class="screen text-center">
+            <h2>🎉 Quiz Completed!</h2>
+            <p>Here is your final score summary:</p>
+            <div class="score-card" id="final-score">0/20</div>
+            <p id="result-message">Great effort!</p>
+            <button class="btn" id="restart-btn">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Quiz Data Bank (Total 20 Questions)
+        const quizData = [
+            {
+                question: "What does HTML stand for?",
+                options: ["Hyper Text Markup Language", "High Tech Multi Language", "Hyper Transfer Machine Language", "Hyperlink and Text Markup Language"],
+                answer: 0
+            },
+            {
+                question: "Which language is used for styling web pages?",
+                options: ["HTML", "JQuery", "CSS", "XML"],
+                answer: 2
+            },
+            {
+                question: "Inside which HTML element do we put the JavaScript?",
+                options: ["<script>", "<javascript>", "<js>", "<scripting>"],
+                answer: 0
+            },
+            {
+                question: "Which of the following is a JavaScript data type?",
+                options: ["Float", "Boolean", "Character", "Decimal"],
+                answer: 1
+            },
+            {
+                question: "How do you write 'Hello World' in an alert box?",
+                options: ["msg('Hello World');", "alertBox('Hello World');", "msgBox('Hello World');", "alert('Hello World');"],
+                answer: 3
+            },
+            {
+                question: "Which CSS property is used to change the text color of an element?",
+                options: ["font-color", "text-color", "color", "background-color"],
+                answer: 2
+            },
+            {
+                question: "Which of the following is correct syntax to refer to an external script called 'app.js'?",
+                options: ["<script href='app.js'></scr" + "ipt>", "<script name='app.js'></scr" + "ipt>", "<script src='app.js'></scr" + "ipt>", "<script file='app.js'></scr" + "ipt>"],
+                answer: 2
+            },
+            {
+                question: "How do you create a function in JavaScript?",
+                options: ["function myFunction()", "function:myFunction()", "create myFunction()", "def myFunction()"],
+                answer: 0
+            },
+            {
+                question: "Which HTML tag is used to define an internal style sheet?",
+                options: ["<css>", "<script>", "<style>", "<design>"],
+                answer: 2
+            },
+            {
+                question: "Which event occurs when the user clicks on an HTML element?",
+                options: ["onchange", "onmouseover", "onclick", "onmouseclick"],
+                answer: 2
+            },
+            {
+                question: "How can you add a single-line comment in JavaScript?",
+                options: ["<!-- This is a comment -->", "// This is a comment", "/* This is a comment */", "# This is a comment"],
+                answer: 1
+            },
+            {
+                question: "What does CSS stand for?",
+                options: ["Creative Style Sheets", "Cascading Style Sheets", "Computer Style Sheets", "Colorful Style Sheets"],
+                answer: 1
+            },
+            {
+                question: "What is the correct HTML tag for inserting a line break?",
+                options: ["<lb>", "<break>", "<br>", "<hr>"],
+                answer: 2
+            },
+            {
+                question: "In JavaScript, which symbol is used for assignment?",
+                options: ["*", "-", "=", "=="],
+                answer: 2
+            },
+            {
+                question: "Which CSS property controls the text size?",
+                options: ["font-style", "text-size", "font-size", "text-style"],
+                answer: 2
+            },
+            {
+                question: "How do you write an IF statement in JavaScript?",
+                options: ["if i = 5 then", "if (i == 5)", "if i == 5 then", "if i = 5"],
+                answer: 1
+            },
+            {
+                question: "Choose the correct HTML element for the largest heading:",
+                options: ["<h6>", "<head>", "<h1>", "<heading>"],
+                answer: 2
+            },
+            {
+                question: "What is the correct syntax for referring to an external CSS file?",
+                options: ["<stylesheet>style.css</stylesheet>", "<link rel='stylesheet' type='text/css' href='style.css'>", "<style src='style.css'>", "<css>style.css</css>"],
+                answer: 1
+            },
+            {
+                question: "How does a FOR loop start in JavaScript?",
+                options: ["for (i = 0; i <= 5; i++)", "for (i <= 5; i++)", "for i = 1 to 5", "for (i = 0; i <= 5)"],
+                answer: 0
+            },
+            {
+                question: "Which built-in method removes the last element from an array in JavaScript?",
+                options: ["last()", "pop()", "get()", "shift()"],
+                answer: 1
+            }
+        ];
+
+        // State variables
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = {};
+        let timer;
+        let timeLeft = 15;
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const questionTitle = document.getElementById('question-title');
+        const optionsList = document.getElementById('options-list');
+        const progressText = document.getElementById('progress-text');
+        const timerDisplay = document.getElementById('timer');
+        const finalScore = document.getElementById('final-score');
+        const resultMessage = document.getElementById('result-message');
+
+        // Event Listeners
+        startBtn.addEventListener('click', startQuiz);
+        nextBtn.addEventListener('click', handleNext);
+        prevBtn.addEventListener('click', handlePrev);
+        restartBtn.addEventListener('click', restartQuiz);
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers = {};
+            startScreen.classList.remove('active');
+            quizScreen.classList.add('active');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            clearInterval(timer);
+            startTimer();
+
+            const currentQ = quizData[currentQuestionIndex];
+            progressText.textContent = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+            questionTitle.textContent = currentQ.question;
+            optionsList.innerHTML = '';
+
+            currentQ.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.classList.add('option-btn');
+                btn.textContent = option;
+                
+                if (userAnswers[currentQuestionIndex] !== undefined) {
+                    const selectedOpt = userAnswers[currentQuestionIndex];
+                    if (index === currentQ.answer) {
+                        btn.classList.add('correct');
+                    } else if (index === selectedOpt) {
+                        btn.classList.add('wrong');
+                    }
+                    btn.disabled = true;
+                }
+
+                btn.addEventListener('click', () => selectOption(index));
+                optionsList.appendChild(btn);
+            });
+
+            prevBtn.style.display = currentQuestionIndex === 0 ? 'none' : 'block';
+            nextBtn.textContent = currentQuestionIndex === quizData.length - 1 ? 'Submit' : 'Next';
+        }
+
+        function selectOption(selectedIndex) {
+            clearInterval(timer);
+            userAnswers[currentQuestionIndex] = selectedIndex;
+
+            const currentQ = quizData[currentQuestionIndex];
+            const optionButtons = optionsList.children;
+
+            for (let i =0; i < optionButtons.length; i++) {
+                optionButtons[i].disabled = true;
+                if (i === currentQ.answer) {
+                    optionButtons[i].classList.add('correct');
+                } else if (i === selectedIndex) {
+                    optionButtons[i].classList.add('wrong');
+                }
+            }
+        }
+
+        function startTimer() {
+            timeLeft = 15;
+            timerDisplay.textContent = `Time: ${timeLeft}s`;
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Time: ${timeLeft}s`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    handleNext();
+                }
+            }, 1000);
+        }
+
+        function handleNext() {
+            if (userAnswers[currentQuestionIndex] === undefined) {
+                userAnswers[currentQuestionIndex] = -1; // Fallback for unanswered due to timer timeout
+            }
+
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function handlePrev() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        }
+
+        function showResults() {
+            clearInterval(timer);
+            quizScreen.classList.remove('active');
+            resultScreen.classList.add('active');
+
+            score = 0;
+            quizData.forEach((q, index) => {
+                if (userAnswers[index] === q.answer) {
+                    score++;
+                }
+            });
+
+            finalScore.textContent = `${score} / ${quizData.length}`;
+            
+            let percentage = (score / quizData.length) * 100;
+            if (percentage === 100) {
+                resultMessage.textContent = "🏆 Outstanding! Perfect score!";
+            } else if (percentage >= 60) {
+                resultMessage.textContent = "👍 Great job! You passed with flying colors.";
+            } else {
+                resultMessage.textContent = "💪 Keep practicing! You'll do better next time.";
+            }
+        }
+
+        function restartQuiz() {
+            resultScreen.classList.remove('active');
+            startScreen.classList.add('active');
+        }
+    </script>
+</body>
+</html>
